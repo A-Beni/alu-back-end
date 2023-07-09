@@ -1,47 +1,29 @@
 #!/usr/bin/python3
-
+""" Calls an API in order to get completed tasks """
 import requests
 import sys
 
-# Check if the employee ID is provided as a command line argument
-if len(sys.argv) < 2:
-    print("Please provide an employee ID as a command line argument")
-    sys.exit(1)
 
-employee_id = sys.argv[1]
+if __name__ == '__main__':
+    userId = sys.argv[1]
+    url_todo = 'https://jsonplaceholder.typicode.com/users/1/todos/'
+    url_user = 'https://jsonplaceholder.typicode.com/users'
+    todo = requests.get(url_todo, params={'userId': userId})
+    user = requests.get(url_user, params={'id': userId})
 
-# Make a GET request to the API endpoint to retrieve employee details
-employee_response = requests.get(
-    f"https://jsonplaceholder.typicode.com/users/{employee_id}"
-)
+    todo_dict_list = todo.json()
+    user_dict_list = user.json()
 
-# Check if the request was successful (status code 200)
-if employee_response.status_code == 200:
-    employee_data = employee_response.json()  # Convert the response to JSON
+    completed_tasks = []
+    total_tasks = len(todo_dict_list)
+    employee = user_dict_list[0].get('name')
 
-    # Fetch the employee name
-    emp_name = employee_data["name"]
+    for task in todo_dict_list:
+        if task['completed']:
+            completed_tasks.append(task)
 
-    # Make a GET request to retrieve the TODO list for the employee
-    todos_response = requests.get(
-        f"https://jsonplaceholder.typicode.com/todos?userId={employee_id}"
-    )
+    print("Employee {} is done with tasks({}/{}):"
+          .format(employee, len(completed_tasks), total_tasks))
 
-    # Check if the request was successful (status code 200)
-    if todos_response.status_code == 200:
-        todos = todos_response.json()  # Convert the response to JSON
-
-        # Filter the completed tasks for the employee
-        comp_tasks = [todo["title"] for todo in todos if todo["completed"]]
-
-        # Display the employee TODO list progress
-        print(
-            f"Employee {emp_name} is done with tasks"
-            f"({len(comp_tasks)}/{len(todos)}):"
-        )
-        for task in comp_tasks:
-            print(f"    {task}")
-    else:
-        print(f"Error: Failed  for employee" f" {employee_id}")
-else:
-    print(f"Error: Failed  for employee" f"{employee_id}"))
+    for task in completed_tasks:
+        print("\t {}".format(task.get('title')))
